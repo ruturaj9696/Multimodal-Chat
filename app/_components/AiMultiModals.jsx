@@ -11,7 +11,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { MessageSquare } from "lucide-react";
+import { LockIcon, MessageSquare } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const AiMultiModals = () => {
   const [aiModalList, setAiModalList] = useState(AIModelList);
@@ -67,6 +68,14 @@ const AiMultiModals = () => {
               )}
             </div>
           </div>
+          {model.premium && model.enable && (
+            <div className="flex justify-center items-center h-full">
+              <Button>
+                {" "}
+                <LockIcon /> Upgrade to Premium
+              </Button>
+            </div>
+          )}
         </div>
       ))}
     </div>
