@@ -1,16 +1,20 @@
 "use client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeProvider } from "next-themes";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import AppSidebar from "./_components/AppSidebar";
 import AppHeader from "./_components/AppHeader";
 import { useUser } from "@clerk/nextjs";
 import { db } from "@/config/FirebaseConfig";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { AiSelectedModelContext } from "./context/AiSelectedModelContext";
+import { DefaultModel } from "./shared/AIModels";
+import { UserDetailContext } from "./context/UserDetailContext";
 
 const Provider = ({ children, ...props }) => {
   const { user } = useUser();
-
+  const [aiSelectedModels, setAiSelectedModels] = useState(DefaultModel);
+  const [userDetails, setUserDetails] = useState();
   useEffect(() => {
     if (user) {
       CreateNewUser();
@@ -23,6 +27,9 @@ const Provider = ({ children, ...props }) => {
 
     if (userSnap.exists()) {
       console.log("user exists");
+      const userInfo = userSnap.data();
+      setAiSelectedModels(userInfo?.selectedModelRef);
+      setUserDetails(userInfo);
       return;
     } else {
       const userData = {
@@ -35,6 +42,7 @@ const Provider = ({ children, ...props }) => {
         plant: "Free",
       };
       await setDoc(userRef, userData);
+      setUserDetails(userData);
       console.log("new user data created");
     }
   };
@@ -45,13 +53,19 @@ const Provider = ({ children, ...props }) => {
       enableSystem
       disableTransitionOnChange
     >
-      <SidebarProvider>
-        <AppSidebar />
-        <div className="w-full">
-          <AppHeader />
-          {children}
-        </div>
-      </SidebarProvider>
+      <AiSelectedModelContext.Provider
+        value={{ aiSelectedModels, setAiSelectedModels }}
+      >
+        <UserDetailContext.Provider value={{ userDetails, setUserDetails }}>
+          <SidebarProvider>
+            <AppSidebar />
+            <div className="w-full">
+              <AppHeader />
+              {children}
+            </div>
+          </SidebarProvider>
+        </UserDetailContext.Provider>
+      </AiSelectedModelContext.Provider>
     </ThemeProvider>
   );
 };
