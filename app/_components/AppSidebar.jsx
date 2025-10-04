@@ -7,11 +7,14 @@ import {
   SidebarGroup,
   SidebarHeader,
 } from "@/components/ui/sidebar";
-import { MoonIcon, SunIcon } from "lucide-react";
+import { SignInButton, useUser } from "@clerk/nextjs";
+import { BoltIcon, MoonIcon, SunIcon, UserIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 import Image from "next/image";
+import UseCreditProgressBar from "./UseCreditProgressBar";
 export function AppSidebar() {
   const { theme, setTheme } = useTheme();
+  const { user } = useUser();
   return (
     <Sidebar>
       <SidebarHeader />
@@ -40,23 +43,53 @@ export function AppSidebar() {
           </div>
         </div>
         <div>
-          <Button className=" mt-6 w-full">+ New chat</Button>
+          {user ? (
+            <Button
+              className=" mt-6 w-full"
+              onClick={() => {
+                console.log("New chat");
+              }}
+            >
+              + New chat
+            </Button>
+          ) : (
+            <SignInButton>
+              <Button className=" mt-6 w-full">+ New chat</Button>
+            </SignInButton>
+          )}
         </div>
       </div>
       <SidebarContent>
         <SidebarGroup>
           <div className="p-3">
             <div className="font-bold text-lg">Chat</div>
-            <div className="text-muted-foreground">
-              Sign in to chat with multiple AI models
-            </div>
+            {!user && (
+              <div className="text-muted-foreground">
+                Sign in to chat with multiple AI models
+              </div>
+            )}
           </div>
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <Button className="w-full" size={"lg"}>
-          Sign In
-        </Button>
+        {!user ? (
+          <div className="p-3">
+            <SignInButton mode="modal">
+              <Button className="w-full">Sign In</Button>
+            </SignInButton>
+          </div>
+        ) : (
+          <div className="p-3">
+            <UseCreditProgressBar />
+            <Button className={" w-full"}>
+              <BoltIcon />
+              Upgrade Plan
+            </Button>
+            <Button className="flex items-center mt-2 w-full">
+              <UserIcon /> {user.fullName}
+            </Button>
+          </div>
+        )}
       </SidebarFooter>
     </Sidebar>
   );
