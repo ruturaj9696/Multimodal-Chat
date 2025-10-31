@@ -14,14 +14,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Chat Application",
-  description: "Chat Application",
+  title: "Promptopia",
+  description: "Discover & Share AI Prompts",
 };
 
 export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
-      <html lang="en" suppressContentEditableWarning>
+      <html lang="en" suppressHydrationWarning>
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >

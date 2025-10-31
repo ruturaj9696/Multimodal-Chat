@@ -51,9 +51,9 @@ const AiMultiModals = () => {
 
   return (
     <div className="flex flex-1 h-[75vh] border-1 w-full">
-      {aiModalList.map((model) => (
+      {aiModalList.map((model, index) => (
         <div
-          key={model.id}
+          key={index}
           className={
             model.enable
               ? `flex flex-col border h-full overflow-auto min-w-[400px]`
@@ -62,7 +62,12 @@ const AiMultiModals = () => {
         >
           <div className="flex w-full items-center justify-between border-b h-[70px] p-4">
             <div className="flex items-center gap-4">
-              <Image src={model.icon} alt={model.name} width={25} height={25} />
+              <Image
+                src={model.icon}
+                alt={model.model}
+                width={25}
+                height={25}
+              />
               {model.enable && (
                 <Select
                   defaultValue={aiSelectedModels[model.model].modelId}
