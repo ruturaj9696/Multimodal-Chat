@@ -6,7 +6,7 @@ import AppSidebar from "./_components/AppSidebar";
 import AppHeader from "./_components/AppHeader";
 import { useUser } from "@clerk/nextjs";
 import { db } from "@/config/FirebaseConfig";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { AiSelectedModelContext } from "./context/AiSelectedModelContext";
 import { DefaultModel } from "./shared/AIModels";
 import { UserDetailContext } from "./context/UserDetailContext";
@@ -15,11 +15,24 @@ const Provider = ({ children, ...props }) => {
   const { user } = useUser();
   const [aiSelectedModels, setAiSelectedModels] = useState(DefaultModel);
   const [userDetails, setUserDetails] = useState();
+  const [messages, setMessages] = useState({});
   useEffect(() => {
     if (user) {
       CreateNewUser();
     }
   }, [user]);
+  useEffect(async () => {
+    if (aiSelectedModels) {
+      updateAImodalSelectionPref();
+    }
+  }, [aiSelectedModels]);
+  const updateAImodalSelectionPref = async () => {
+    //Update to the firebase database
+    const docRef = doc(db, "users", user?.primaryEmailAddress?.emailAddress);
+    await updateDoc(docRef, {
+      selectedModelRef: aiSelectedModels,
+    });
+  };
   const CreateNewUser = async () => {
     // If user exists
     const userRef = doc(db, "users", user?.primaryEmailAddress?.emailAddress);
@@ -28,7 +41,7 @@ const Provider = ({ children, ...props }) => {
     if (userSnap.exists()) {
       console.log("user exists");
       const userInfo = userSnap.data();
-      setAiSelectedModels(userInfo?.selectedModelRef);
+      setAiSelectedModels(userInfo?.selectedModelRef ?? DefaultModel);
       setUserDetails(userInfo);
       return;
     } else {
@@ -54,7 +67,7 @@ const Provider = ({ children, ...props }) => {
       disableTransitionOnChange
     >
       <AiSelectedModelContext.Provider
-        value={{ aiSelectedModels, setAiSelectedModels }}
+        value={{ aiSelectedModels, setAiSelectedModels, messages, setMessages }}
       >
         <UserDetailContext.Provider value={{ userDetails, setUserDetails }}>
           <SidebarProvider>

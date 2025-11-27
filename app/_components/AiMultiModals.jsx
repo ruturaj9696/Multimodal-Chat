@@ -11,25 +11,32 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { LockIcon, MessageSquare } from "lucide-react";
+import { Loader, LockIcon, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SelectGroup, SelectLabel } from "@radix-ui/react-select";
 import { AiSelectedModelContext } from "../context/AiSelectedModelContext";
 import { useUser } from "@clerk/nextjs";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/config/FirebaseConfig";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const AiMultiModals = () => {
   const [aiModalList, setAiModalList] = useState(AIModelList);
-  const { aiSelectedModels, setAiSelectedModels } = useContext(
-    AiSelectedModelContext
-  );
+  const { aiSelectedModels, setAiSelectedModels, messages, setMessages } =
+    useContext(AiSelectedModelContext);
   const { user } = useUser();
   // Handle toggle separately by model id
   const onToggleChange = (model, value) => {
     setAiModalList((prevList) =>
       prevList.map((m) => (m.model === model ? { ...m, enable: value } : m))
     );
+    setAiSelectedModels((prev) => ({
+      ...prev,
+      [model]: {
+        ...(prev?.[model] ?? {}),
+      },
+    }));
   };
 
   // Update the model id
@@ -70,13 +77,13 @@ const AiMultiModals = () => {
               />
               {model.enable && (
                 <Select
-                  defaultValue={aiSelectedModels[model.model].modelId}
+                  defaultValue={aiSelectedModels?.[model.model]?.modelId}
                   onValueChange={(value) => onSelectValue(model.model, value)}
                   disabled={model.premium === true}
                 >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue
-                      placeholder={aiSelectedModels[model.model].modelId}
+                      placeholder={aiSelectedModels?.[model.model]?.modelId}
                     />
                   </SelectTrigger>
                   <SelectContent>
@@ -98,7 +105,7 @@ const AiMultiModals = () => {
                           subModel.premium === true && (
                             <SelectItem
                               key={index}
-                              value={subModel.name}
+                              value={subModel.id}
                               disabled={subModel.premium}
                             >
                               {subModel.name} {subModel.premium && <LockIcon />}
@@ -131,6 +138,41 @@ const AiMultiModals = () => {
                 {" "}
                 <LockIcon /> Upgrade to Premium
               </Button>
+            </div>
+          )}
+          {model.enable && (
+            <div className="flex-1 p-4">
+              <div className="flex-1 p-4 space-y-2">
+                {messages[model.model]?.map((m, index) => (
+                  <div
+                    key={index}
+                    className={`p-2 rounded-md ${
+                      m.role === "user"
+                        ? "bg-blue-200 text-blue-900"
+                        : "bg-gray-100 text-gray-900"
+                    }`}
+                  >
+                    {m.role === "assistant" && (
+                      <span className="font-semibold block mb-1">
+                        {m.model ?? model.model}
+                      </span>
+                    )}
+                    {m.content === "loading" && (
+                      <>
+                        <Loader className="animate-spin" />
+                        <span>Thinking..</span>
+                      </>
+                    )}
+                    {m.content !== "loading" && (
+                      <h2>
+                        <Markdown remarkPlugins={[remarkGfm]}>
+                          {m.content}
+                        </Markdown>
+                      </h2>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
