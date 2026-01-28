@@ -11,6 +11,7 @@ import { SignInButton, useUser } from "@clerk/nextjs";
 import { BoltIcon, MoonIcon, SunIcon, UserIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 import Image from "next/image";
+import Link from "next/link";
 import UseCreditProgressBar from "./UseCreditProgressBar";
 import { useEffect, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
@@ -192,20 +193,21 @@ export function AppSidebar() {
                   if (!chatInfo) return null;
 
                   return (
-                    <div
+                    // FIXED: Use Link component with query parameter
+                    <Link
                       key={chat.id || index}
-                      className="p-2 hover:bg-accent rounded-md cursor-pointer transition-colors"
-                      onClick={() =>
-                        (window.location.href = `?chatId=${chatInfo.chatId}`)
-                      }
+                      href={`/?chatId=${chatInfo.chatId}`}
+                      prefetch={false} // Disable prefetch for better performance
                     >
-                      <h2 className="text-sm font-medium truncate">
-                        {chatInfo.message}
-                      </h2>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {chatInfo.lastMsgDate}
-                      </p>
-                    </div>
+                      <div className="p-2 hover:bg-accent rounded-md cursor-pointer transition-colors">
+                        <h2 className="text-sm font-medium truncate">
+                          {chatInfo.message}
+                        </h2>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {chatInfo.lastMsgDate}
+                        </p>
+                      </div>
+                    </Link>
                   );
                 })}
               </div>

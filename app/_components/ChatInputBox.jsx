@@ -6,8 +6,10 @@ import AiMultiModals from "./AiMultiModals";
 import { AiSelectedModelContext } from "../context/AiSelectedModelContext";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/config/FirebaseConfig";
+import { useUser } from "@clerk/nextjs";
+import { useSearchParams } from "next/navigation";
 
 const ChatInputBox = () => {
   const [userInput, setUserInput] = useState("");
@@ -15,11 +17,19 @@ const ChatInputBox = () => {
     AiSelectedModelContext
   );
   const [chatId, setChatId] = useState(null);
+  const { user } = useUser();
+
+  const params = useSearchParams();
 
   // Create unique chat ID once
   useEffect(() => {
-    setChatId(uuidv4());
-  }, []);
+    if (params.get("chatId")) {
+      setChatId(params.get("chatId"));
+      GetMessages();
+    } else {
+      setChatId(uuidv4());
+    }
+  }, [params]);
 
   const handleSend = async () => {
     if (!userInput.trim()) return;
@@ -103,8 +113,9 @@ const ChatInputBox = () => {
     const docRef = doc(db, "chatHistory", chatId);
     await setDoc(docRef, {
       chatId,
+      userEmail: user?.primaryEmailAddress?.emailAddress,
       messages,
-      updatedAt: new Date(),
+      lastupdated: new Date(),
     });
   };
 
@@ -116,6 +127,20 @@ const ChatInputBox = () => {
     saveMessage();
   }, [messages, chatId]);
 
+  // Save only when chatId exists & messages updated
+  useEffect(() => {
+    if (!chatId) return;
+    if (!messages) return;
+
+    saveMessage();
+  }, [messages, chatId]);
+
+  const GetMessages = async () => {
+    const docRef = doc(db, "chatHistory", chatId);
+    const docSnap = await getDoc(docRef);
+    const docData = docSnap.data();
+    setMessages(docData);
+  };
   return (
     <div>
       <div className="relative h-screen">

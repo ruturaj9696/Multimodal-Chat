@@ -20,6 +20,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/config/FirebaseConfig";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useSearchParams } from "next/navigation";
 
 const AiMultiModals = () => {
   const [aiModalList, setAiModalList] = useState(AIModelList);
