@@ -1,21 +1,30 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MicIcon, Paperclip, SendIcon } from "lucide-react";
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import AiMultiModals from "./AiMultiModals";
 import { AiSelectedModelContext } from "../context/AiSelectedModelContext";
 import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "@/config/FirebaseConfig";
 
 const ChatInputBox = () => {
   const [userInput, setUserInput] = useState("");
   const { aiSelectedModels, messages, setMessages } = useContext(
     AiSelectedModelContext
   );
+  const [chatId, setChatId] = useState(null);
+
+  // Create unique chat ID once
+  useEffect(() => {
+    setChatId(uuidv4());
+  }, []);
 
   const handleSend = async () => {
     if (!userInput.trim()) return;
 
-    // 1️⃣ Add user message to every model
+    // Add user message to each enabled model
     setMessages((prev) => {
       const updated = { ...prev };
       Object.keys(aiSelectedModels).forEach((modelKey) => {
@@ -32,14 +41,10 @@ const ChatInputBox = () => {
     const currentInput = userInput;
     setUserInput("");
 
-    // 2️⃣ Fetch response from each model
+    // Fetch response from each enabled model
     Object.entries(aiSelectedModels).forEach(
       async ([parentModel, modelInfo]) => {
-        if (
-          (!modelInfo?.modelId && !modelInfo?.enable) ||
-          aiSelectedModels[parentModel].enable == false
-        )
-          return;
+        if (!modelInfo?.modelId || !modelInfo?.enable) return;
 
         // Add placeholder
         setMessages((prev) => ({
@@ -63,14 +68,14 @@ const ChatInputBox = () => {
           });
 
           const { aiResponse, model } = result.data;
-          console.log("result is ", result.data);
-          // Replace loading message
+
+          // Replace placeholder with real response
           setMessages((prev) => {
             const updated = [...(prev[parentModel] ?? [])];
-            const loadingIndex = updated.findIndex((m) => m.loading === true);
+            const loadingIdx = updated.findIndex((m) => m.loading);
 
-            if (loadingIndex !== -1) {
-              updated[loadingIndex] = {
+            if (loadingIdx !== -1) {
+              updated[loadingIdx] = {
                 role: "assistant",
                 content: aiResponse,
                 model,
@@ -93,6 +98,23 @@ const ChatInputBox = () => {
       }
     );
   };
+  const saveMessage = async () => {
+    if (!chatId) return;
+    const docRef = doc(db, "chatHistory", chatId);
+    await setDoc(docRef, {
+      chatId,
+      messages,
+      updatedAt: new Date(),
+    });
+  };
+
+  // Save only when chatId exists & messages updated
+  useEffect(() => {
+    if (!chatId) return;
+    if (!messages) return;
+
+    saveMessage();
+  }, [messages, chatId]);
 
   return (
     <div>
@@ -107,7 +129,7 @@ const ChatInputBox = () => {
             placeholder="Ask me anything..."
             className="border-0 outline-none"
             onChange={(e) => setUserInput(e.target.value)}
-            onClick={(e) => event == "Enter" && handleSend}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
             value={userInput}
           />
 

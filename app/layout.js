@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Promptopia",
+  title: "AI-Orchestra",
   description: "Discover & Share AI Prompts",
 };
 

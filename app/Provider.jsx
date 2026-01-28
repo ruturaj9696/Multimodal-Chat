@@ -1,5 +1,5 @@
 "use client";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { ThemeProvider } from "next-themes";
 import React, { useEffect, useState } from "react";
 import AppSidebar from "./_components/AppSidebar";
@@ -11,54 +11,69 @@ import { AiSelectedModelContext } from "./context/AiSelectedModelContext";
 import { DefaultModel } from "./shared/AIModels";
 import { UserDetailContext } from "./context/UserDetailContext";
 
-const Provider = ({ children, ...props }) => {
+const Provider = ({ children }) => {
   const { user } = useUser();
   const [aiSelectedModels, setAiSelectedModels] = useState(DefaultModel);
   const [userDetails, setUserDetails] = useState();
   const [messages, setMessages] = useState({});
-  useEffect(() => {
-    if (user) {
-      CreateNewUser();
-    }
-  }, [user]);
-  useEffect(async () => {
-    if (aiSelectedModels) {
-      updateAImodalSelectionPref();
-    }
-  }, [aiSelectedModels]);
-  const updateAImodalSelectionPref = async () => {
-    //Update to the firebase database
-    const docRef = doc(db, "users", user?.primaryEmailAddress?.emailAddress);
-    await updateDoc(docRef, {
-      selectedModelRef: aiSelectedModels,
-    });
-  };
+
   const CreateNewUser = async () => {
-    // If user exists
-    const userRef = doc(db, "users", user?.primaryEmailAddress?.emailAddress);
+    if (!user) return; // protect from undefined user
+
+    const email = user.primaryEmailAddress?.emailAddress;
+    if (!email) return;
+
+    const userRef = doc(db, "users", email);
     const userSnap = await getDoc(userRef);
 
     if (userSnap.exists()) {
-      console.log("user exists");
       const userInfo = userSnap.data();
       setAiSelectedModels(userInfo?.selectedModelRef ?? DefaultModel);
       setUserDetails(userInfo);
       return;
-    } else {
-      const userData = {
-        name: user.fullName,
-        email: user.primaryEmailAddress.emailAddress,
-        uid: user.id,
-        createdAt: new Date(),
-        remainingMsg: 5, //Only for free users
-        credits: 1000, //Only for paid users
-        plant: "Free",
-      };
-      await setDoc(userRef, userData);
-      setUserDetails(userData);
-      console.log("new user data created");
     }
+
+    const userData = {
+      name: user.fullName,
+      email,
+      uid: user.id,
+      createdAt: new Date(),
+      remainingMsg: 5,
+      credits: 1000,
+      plant: "Free",
+    };
+
+    await setDoc(userRef, userData);
+    setUserDetails(userData);
   };
+
+  // Run CreateNewUser when user is available
+  useEffect(() => {
+    if (!user) return;
+    CreateNewUser();
+  }, [user]);
+
+  const updateAImodalSelectionPref = async () => {
+    if (!user) return;
+
+    const email = user.primaryEmailAddress?.emailAddress;
+    if (!email) return;
+
+    const docRef = doc(db, "users", email);
+    await updateDoc(docRef, {
+      selectedModelRef: aiSelectedModels,
+    });
+  };
+
+  useEffect(() => {
+    if (!user) return;
+
+    const run = async () => {
+      await updateAImodalSelectionPref();
+    };
+    run();
+  }, [aiSelectedModels, user]);
+
   return (
     <ThemeProvider
       attribute="class"
