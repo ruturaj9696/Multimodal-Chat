@@ -127,14 +127,6 @@ const ChatInputBox = () => {
     saveMessage();
   }, [messages, chatId]);
 
-  // Save only when chatId exists & messages updated
-  useEffect(() => {
-    if (!chatId) return;
-    if (!messages) return;
-
-    saveMessage();
-  }, [messages, chatId]);
-
   const GetMessages = async () => {
     const docRef = doc(db, "chatHistory", chatId);
     const docSnap = await getDoc(docRef);
@@ -152,7 +144,7 @@ const ChatInputBox = () => {
           <Input
             type="text"
             placeholder="Ask me anything..."
-            className="border-0 outline-none"
+            className="border-0 outline-none rounded-lg" // Updated to add rounded corners
             onChange={(e) => setUserInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             value={userInput}
@@ -168,7 +160,7 @@ const ChatInputBox = () => {
                 <MicIcon />
               </Button>
 
-              <Button size="icon" onClick={handleSend}>
+              <Button size="icon" onClick={handleSend} className="bg-blue-500 text-white rounded-full"> // Updated to add a prominent send button
                 <SendIcon />
               </Button>
             </div>
